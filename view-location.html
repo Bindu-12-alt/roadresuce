@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>View Location - RoadRescue</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="header">
+    <h1>User Location</h1>
+    <div class="nav">
+      <a href="mechanic-dashboard.html">Pending Requests</a>
+      <a href="my-jobs.html">My Jobs</a>
+      <a href="#" onclick="logout()">Logout</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <h2>Service Request Location</h2>
+      <div id="map" style="height: 500px;"></div>
+      <div style="margin-top: 20px;">
+        <button class="btn btn-success" onclick="acceptFromMap()">Accept Request</button>
+        <button class="btn btn-primary" onclick="history.back()">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/utils.js"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCK8JSvLwL0jSQX008GIJP1tKOrcRnJX7E"></script>
+
+  <script>
+    checkAuth();
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const requestId = urlParams.get('id');
+    const lat = parseFloat(urlParams.get('lat'));
+    const lng = parseFloat(urlParams.get('lng'));
+
+    function initMap() {
+      const position = { lat, lng };
+      
+      const map = new google.maps.Map(document.getElementById('map'), {
+        center: position,
+        zoom: 15
+      });
+
+      new google.maps.Marker({
+        position: position,
+        map: map,
+        title: 'User Location'
+      });
+    }
+
+    async function acceptFromMap() {
+      if (!confirm('Do you want to accept this service request?')) return;
+      
+      try {
+        await apiCall(`/module2/accept/${requestId}`, 'PUT');
+        showAlert('Request accepted successfully!', 'success');
+        setTimeout(() => {
+          window.location.href = 'my-jobs.html';
+        }, 1500);
+      } catch (error) {
+        showAlert(error.message, 'error');
+      }
+    }
+
+    initMap();
+  </script>
+</body>
+</html>

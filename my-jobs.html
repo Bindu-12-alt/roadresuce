@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Jobs - RoadRescue</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="header">
+    <h1>My Jobs</h1>
+    <div class="nav">
+      <a href="mechanic-dashboard.html">Pending Requests</a>
+      <a href="my-jobs.html">My Jobs</a>
+      <a href="#" onclick="logout()">Logout</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <h2>My Accepted Jobs</h2>
+      <div id="jobsList"></div>
+    </div>
+  </div>
+
+  <script src="../js/utils.js"></script>
+  <script>
+    checkAuth();
+
+    async function loadMyJobs() {
+      try {
+        const result = await apiCall('/module2/my-jobs', 'GET');
+        displayJobs(result.requests);
+      } catch (error) {
+        showAlert(error.message, 'error');
+      }
+    }
+
+    function displayJobs(jobs) {
+      const container = document.getElementById('jobsList');
+      
+      if (jobs.length === 0) {
+        container.innerHTML = '<p>No jobs accepted yet.</p>';
+        return;
+      }
+
+      let html = '<table class="table"><thead><tr><th>User</th><th>Problem</th><th>Status</th><th>Date</th><th>Action</th></tr></thead><tbody>';
+      
+      jobs.forEach(job => {
+        html += `
+          <tr>
+            <td>${job.userId.name}<br><small>${job.userId.phone}</small></td>
+            <td>${job.problemType}<br><small>${job.description}</small></td>
+            <td>${getStatusBadge(job.status)}</td>
+            <td>${formatDate(job.createdAt)}</td>
+            <td>
+              ${job.status === 'Accepted' ? `<button class="btn btn-primary" onclick="updateStatus('${job._id}', 'In Progress')">Start Work</button>` : ''}
+              ${job.status === 'In Progress' ? `<button class="btn btn-success" onclick="updateStatus('${job._id}', 'Completed')">Complete</button>` : ''}
+            </td>
+          </tr>
+        `;
+      });
+      
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    async function updateStatus(id, status) {
+      try {
+        await apiCall(`/module3/update-status/${id}`, 'PUT', { status });
+        showAlert(`Status updated to ${status}`, 'success');
+        loadMyJobs();
+      } catch (error) {
+        showAlert(error.message, 'error');
+      }
+    }
+
+    loadMyJobs();
+  </script>
+</body>
+</html>

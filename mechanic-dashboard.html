@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mechanic Dashboard - RoadRescue</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="header">
+    <h1>Mechanic Dashboard</h1>
+    <div class="nav">
+      <a href="mechanic-dashboard.html">Pending Requests</a>
+      <a href="my-jobs.html">My Jobs</a>
+      <a href="#" onclick="logout()">Logout</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <h2>Welcome, <span id="mechanicName"></span>!</h2>
+      <p>View and accept service requests from users</p>
+    </div>
+
+    <div class="card">
+      <h2>Pending Service Requests</h2>
+      <div id="requestsList"></div>
+    </div>
+  </div>
+
+  <script src="../js/utils.js"></script>
+  <script>
+    checkAuth();
+    
+    const userData = getUserData();
+    document.getElementById('mechanicName').textContent = userData.name;
+
+    async function loadPendingRequests() {
+      try {
+        const result = await apiCall('/module2/pending-requests', 'GET');
+        displayRequests(result.requests);
+      } catch (error) {
+        showAlert(error.message, 'error');
+      }
+    }
+
+    function displayRequests(requests) {
+      const container = document.getElementById('requestsList');
+      
+      if (requests.length === 0) {
+        container.innerHTML = '<p>No pending requests at the moment.</p>';
+        return;
+      }
+
+      let html = '<table class="table"><thead><tr><th>User</th><th>Problem</th><th>Location</th><th>Date</th><th>Action</th></tr></thead><tbody>';
+      
+      requests.forEach(req => {
+        html += `
+          <tr>
+            <td>${req.userId.name}<br><small>${req.userId.phone}</small></td>
+            <td>${req.problemType}<br><small>${req.description}</small></td>
+            <td><button class="btn btn-primary" onclick="viewLocation('${req._id}', ${req.location.latitude}, ${req.location.longitude})">View Map</button></td>
+            <td>${formatDate(req.createdAt)}</td>
+            <td>
+              <button class="btn btn-success" onclick="acceptRequest('${req._id}')">Accept</button>
+            </td>
+          </tr>
+        `;
+      });
+      
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    function viewLocation(id, lat, lng) {
+      window.location.href = `view-location.html?id=${id}&lat=${lat}&lng=${lng}`;
+    }
+
+    async function acceptRequest(id) {
+      if (!confirm('Do you want to accept this service request?')) return;
+      
+      try {
+        await apiCall(`/module2/accept/${id}`, 'PUT');
+        showAlert('Request accepted successfully!', 'success');
+        loadPendingRequests();
+      } catch (error) {
+        showAlert(error.message, 'error');
+      }
+    }
+
+    loadPendingRequests();
+    
+    // Auto refresh every 30 seconds
+    setInterval(loadPendingRequests, 30000);
+  </script>
+</body>
+</html>
