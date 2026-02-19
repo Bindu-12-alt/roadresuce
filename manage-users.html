@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Users - RoadRescue</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="header">
+    <h1>Manage Users</h1>
+    <div class="nav">
+      <a href="admin-dashboard.html">Dashboard</a>
+      <a href="manage-users.html">Users</a>
+      <a href="manage-mechanics.html">Mechanics</a>
+      <a href="manage-requests.html">Requests</a>
+      <a href="manage-payments.html">Payments</a>
+      <a href="#" onclick="logout()">Logout</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <h2>All Users</h2>
+      <div id="usersList"></div>
+    </div>
+  </div>
+
+  <script src="../js/utils.js"></script>
+  <script>
+    checkAuth();
+
+    async function loadUsers() {
+      try {
+        const result = await apiCall('/module4/admin/users', 'GET');
+        displayUsers(result.users);
+      } catch (error) {
+        showAlert(error.message, 'error');
+      }
+    }
+
+    function displayUsers(users) {
+      const container = document.getElementById('usersList');
+      
+      if (users.length === 0) {
+        container.innerHTML = '<p>No users registered yet.</p>';
+        return;
+      }
+
+      let html = '<table class="table"><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Registered</th></tr></thead><tbody>';
+      
+      users.forEach(user => {
+        html += `
+          <tr>
+            <td>${user.name}</td>
+            <td>${user.email}</td>
+            <td>${user.phone}</td>
+            <td>${formatDate(user.createdAt)}</td>
+          </tr>
+        `;
+      });
+      
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    loadUsers();
+  </script>
+</body>
+</html>

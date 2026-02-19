@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Payments - RoadRescue</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="header">
+    <h1>Manage Payments</h1>
+    <div class="nav">
+      <a href="admin-dashboard.html">Dashboard</a>
+      <a href="manage-users.html">Users</a>
+      <a href="manage-mechanics.html">Mechanics</a>
+      <a href="manage-requests.html">Requests</a>
+      <a href="manage-payments.html">Payments</a>
+      <a href="#" onclick="logout()">Logout</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <h2>All Payments</h2>
+      <div id="paymentsList"></div>
+    </div>
+  </div>
+
+  <script src="../js/utils.js"></script>
+  <script>
+    checkAuth();
+
+    async function loadPayments() {
+      try {
+        const result = await apiCall('/module4/admin/payments', 'GET');
+        displayPayments(result.payments);
+      } catch (error) {
+        showAlert(error.message, 'error');
+      }
+    }
+
+    function displayPayments(payments) {
+      const container = document.getElementById('paymentsList');
+      
+      if (payments.length === 0) {
+        container.innerHTML = '<p>No payments yet.</p>';
+        return;
+      }
+
+      let html = '<table class="table"><thead><tr><th>User</th><th>Amount</th><th>Payment ID</th><th>Status</th><th>Date</th></tr></thead><tbody>';
+      
+      payments.forEach(payment => {
+        html += `
+          <tr>
+            <td>${payment.userId.name}<br><small>${payment.userId.email}</small></td>
+            <td>₹${payment.amount}</td>
+            <td><small>${payment.razorpayPaymentId || 'N/A'}</small></td>
+            <td>${getStatusBadge(payment.status)}</td>
+            <td>${formatDate(payment.createdAt)}</td>
+          </tr>
+        `;
+      });
+      
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    loadPayments();
+  </script>
+</body>
+</html>
