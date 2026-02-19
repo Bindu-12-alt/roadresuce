@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Login - RoadRescue</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="header">
+    <h1>RoadRescue - User Login</h1>
+  </div>
+
+  <div class="container">
+    <div class="card" style="max-width: 500px; margin: 0 auto;">
+      <h2>User Login</h2>
+      <form id="loginForm">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="email" required>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="password" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+      </form>
+      <p style="text-align: center; margin-top: 20px;">
+        Don't have an account? <a href="user-register.html">Register here</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="../js/utils.js"></script>
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const data = {
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value
+      };
+
+      try {
+        const result = await apiCall('/module1/login', 'POST', data);
+        setToken(result.token);
+        setUserData(result.user);
+        showAlert('Login successful!', 'success');
+        setTimeout(() => {
+          window.location.href = 'user-dashboard.html';
+        }, 1000);
+      } catch (error) {
+        showAlert(error.message, 'error');
+      }
+    });
+  </script>
+</body>
+</html>

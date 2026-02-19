@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Service Request - RoadRescue</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="header">
+    <h1>Create Service Request</h1>
+    <div class="nav">
+      <a href="user-dashboard.html">Dashboard</a>
+      <a href="create-request.html">New Request</a>
+      <a href="#" onclick="logout()">Logout</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <h2>Request Vehicle Assistance</h2>
+      <form id="requestForm">
+        <div class="form-group">
+          <label>Problem Type</label>
+          <select id="problemType" required>
+            <option value="">Select Problem</option>
+            <option value="Engine Issue">Engine Issue</option>
+            <option value="Tyre Puncture">Tyre Puncture</option>
+            <option value="Battery Issue">Battery Issue</option>
+            <option value="Brake Problem">Brake Problem</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="description" required placeholder="Describe your problem in detail"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Your Location</label>
+          <button type="button" class="btn btn-success" onclick="getLocation()">📍 Get Current Location</button>
+          <p id="locationStatus" style="margin-top: 10px; color: #666;"></p>
+        </div>
+
+        <div id="map"></div>
+
+        <input type="hidden" id="latitude">
+        <input type="hidden" id="longitude">
+        <input type="hidden" id="address">
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">Submit Request</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="../js/utils.js"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCK8JSvLwL0jSQX008GIJP1tKOrcRnJX7E"></script>
+
+  <script>
+    checkAuth();
+    
+    let map;
+    let marker;
+
+    function initMap(lat, lng) {
+      const position = { lat, lng };
+      
+      map = new google.maps.Map(document.getElementById('map'), {
+        center: position,
+        zoom: 15
+      });
+
+      marker = new google.maps.Marker({
+        position: position,
+        map: map,
+        title: 'Your Location'
+      });
+    }
+
+    function getLocation() {
+      if (navigator.geolocation) {
+        document.getElementById('locationStatus').textContent = 'Getting location...';
+        
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            
+            document.getElementById('latitude').value = lat;
+            document.getElementById('longitude').value = lng;
+            document.getElementById('locationStatus').textContent = `Location detected: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            
+            initMap(lat, lng);
+            getAddress(lat, lng);
+          },
+          (error) => {
+            showAlert('Unable to get location. Please enable location services.', 'error');
+            document.getElementById('locationStatus').textContent = 'Location access denied';
+          }
+        );
+      } else {
+        showAlert('Geolocation is not supported by your browser', 'error');
+      }
+    }
+
+    function getAddress(lat, lng) {
+      const geocoder = new google.maps.Geocoder();
+      const latlng = { lat, lng };
+      
+      geocoder.geocode({ location: latlng }, (results, status) => {
+        if (status === 'OK' && results[0]) {
+          document.getElementById('address').value = results[0].formatted_address;
+        }
+      });
+    }
+
+    document.getElementById('requestForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const latitude = document.getElementById('latitude').value;
+      const longitude = document.getElementById('longitude').value;
+      
+      if (!latitude || !longitude) {
+        showAlert('Please get your current location first', 'error');
+        return;
+      }
+
+      const data = {
+        problemType: document.getElementById('problemType').value,
+        description: document.getElementById('description').value,
+        location: {
+          latitude: parseFloat(latitude),
+          longitude: parseFloat(longitude),
+          address: document.getElementById('address').value
+        }
+      };
+
+      try {
+        const result = await apiCall('/module1/service-request', 'POST', data);
+        showAlert('Service request created successfully!', 'success');
+        setTimeout(() => {
+          window.location.href = 'user-dashboard.html';
+        }, 1500);
+      } catch (error) {
+        showAlert(error.message, 'error');
+      }
+    });
+  </script>
+</body>
+</html>
