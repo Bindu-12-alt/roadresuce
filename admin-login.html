@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login - RoadRescue</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="header">
+    <h1>RoadRescue - Admin Login</h1>
+  </div>
+
+  <div class="container">
+    <div class="card" style="max-width: 500px; margin: 0 auto;">
+      <h2>Admin Login</h2>
+      <form id="loginForm">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="email" value="admin@roadrescue.com">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="password" value="admin123">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="../js/utils.js"></script>
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const data = {
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value
+      };
+
+      try {
+        const result = await apiCall('/module4/admin/login', 'POST', data);
+        setToken(result.token);
+        setUserData({ role: result.role });
+        showAlert('Admin login successful!', 'success');
+        setTimeout(() => {
+          window.location.href = 'admin-dashboard.html';
+        }, 1000);
+      } catch (error) {
+        showAlert(error.message, 'error');
+      }
+    });
+  </script>
+</body>
+</html>

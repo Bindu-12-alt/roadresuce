@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Mechanics - RoadRescue</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="header">
+    <h1>Manage Mechanics</h1>
+    <div class="nav">
+      <a href="admin-dashboard.html">Dashboard</a>
+      <a href="manage-users.html">Users</a>
+      <a href="manage-mechanics.html">Mechanics</a>
+      <a href="manage-requests.html">Requests</a>
+      <a href="manage-payments.html">Payments</a>
+      <a href="#" onclick="logout()">Logout</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <h2>All Mechanics</h2>
+      <div id="mechanicsList"></div>
+    </div>
+  </div>
+
+  <script src="../js/utils.js"></script>
+  <script>
+    checkAuth();
+
+    async function loadMechanics() {
+      try {
+        const result = await apiCall('/module4/admin/mechanics', 'GET');
+        displayMechanics(result.mechanics);
+      } catch (error) {
+        showAlert(error.message, 'error');
+      }
+    }
+
+    function displayMechanics(mechanics) {
+      const container = document.getElementById('mechanicsList');
+      
+      if (mechanics.length === 0) {
+        container.innerHTML = '<p>No mechanics registered yet.</p>';
+        return;
+      }
+
+      let html = '<table class="table"><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Registered</th></tr></thead><tbody>';
+      
+      mechanics.forEach(mechanic => {
+        html += `
+          <tr>
+            <td>${mechanic.name}</td>
+            <td>${mechanic.email}</td>
+            <td>${mechanic.phone}</td>
+            <td>${formatDate(mechanic.createdAt)}</td>
+          </tr>
+        `;
+      });
+      
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    loadMechanics();
+  </script>
+</body>
+</html>
