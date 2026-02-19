@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Dashboard - RoadRescue</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="header">
+    <h1>User Dashboard</h1>
+    <div class="nav">
+      <a href="user-dashboard.html">Dashboard</a>
+      <a href="create-request.html">New Request</a>
+      <a href="#" onclick="logout()">Logout</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <h2>Welcome, <span id="userName"></span>!</h2>
+      <p>Manage your vehicle service requests</p>
+    </div>
+
+    <div class="card">
+      <h2>My Service Requests</h2>
+      <div id="requestsList"></div>
+    </div>
+  </div>
+
+  <script src="../js/utils.js"></script>
+  <script>
+    checkAuth();
+    
+    const userData = getUserData();
+    document.getElementById('userName').textContent = userData.name;
+
+    async function loadRequests() {
+      try {
+        const result = await apiCall('/module1/my-requests', 'GET');
+        displayRequests(result.requests);
+      } catch (error) {
+        showAlert(error.message, 'error');
+      }
+    }
+
+    function displayRequests(requests) {
+      const container = document.getElementById('requestsList');
+      
+      if (requests.length === 0) {
+        container.innerHTML = '<p>No service requests yet. <a href="create-request.html">Create one now</a></p>';
+        return;
+      }
+
+      let html = '<table class="table"><thead><tr><th>Problem</th><th>Status</th><th>Mechanic</th><th>Date</th><th>Action</th></tr></thead><tbody>';
+      
+      requests.forEach(req => {
+        html += `
+          <tr>
+            <td>${req.problemType}</td>
+            <td>${getStatusBadge(req.status)}</td>
+            <td>${req.mechanicId ? req.mechanicId.name : 'Not assigned'}</td>
+            <td>${formatDate(req.createdAt)}</td>
+            <td><button class="btn btn-primary" onclick="viewRequest('${req._id}')">View</button></td>
+          </tr>
+        `;
+      });
+      
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    function viewRequest(id) {
+      window.location.href = `view-request.html?id=${id}`;
+    }
+
+    loadRequests();
+  </script>
+</body>
+</html>

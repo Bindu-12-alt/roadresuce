@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>View Request - RoadRescue</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="header">
+    <h1>Service Request Details</h1>
+    <div class="nav">
+      <a href="user-dashboard.html">Dashboard</a>
+      <a href="create-request.html">New Request</a>
+      <a href="#" onclick="logout()">Logout</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <h2>Request Information</h2>
+      <div id="requestDetails"></div>
+      <div id="map"></div>
+      <div id="paymentSection" style="margin-top: 20px;"></div>
+    </div>
+  </div>
+
+  <script src="../js/utils.js"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCK8JSvLwL0jSQX008GIJP1tKOrcRnJX7E"></script>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script>
+    checkAuth();
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const requestId = urlParams.get('id');
+
+    async function loadRequestDetails() {
+      try {
+        const result = await apiCall(`/module3/status/${requestId}`, 'GET');
+        displayRequest(result.request);
+      } catch (error) {
+        showAlert(error.message, 'error');
+      }
+    }
+
+    function displayRequest(request) {
+      const container = document.getElementById('requestDetails');
+      
+      let html = `
+        <p><strong>Problem Type:</strong> ${request.problemType}</p>
+        <p><strong>Description:</strong> ${request.description}</p>
+        <p><strong>Status:</strong> ${getStatusBadge(request.status)}</p>
+        <p><strong>Created:</strong> ${formatDate(request.createdAt)}</p>
+      `;
+      
+      if (request.mechanicId) {
+        html += `
+          <p><strong>Mechanic:</strong> ${request.mechanicId.name}</p>
+          <p><strong>Mechanic Phone:</strong> ${request.mechanicId.phone}</p>
+        `;
+      }
+      
+      if (request.location.address) {
+        html += `<p><strong>Location:</strong> ${request.location.address}</p>`;
+      }
+      
+      container.innerHTML = html;
+
+      // Show map
+      initMap(request.location.latitude, request.location.longitude);
+
+      // Show payment button if completed and not paid
+      if (request.status === 'Completed' && !request.paymentId) {
+        showPaymentButton(request._id);
+      }
+    }
+
+    function initMap(lat, lng) {
+      const position = { lat, lng };
+      
+      const map = new google.maps.Map(document.getElementById('map'), {
+        center: position,
+        zoom: 15
+      });
+
+      new google.maps.Marker({
+        position: position,
+        map: map,
+        title: 'Service Location'
+      });
+    }
+
+    function showPaymentButton(requestId) {
+      const paymentSection = document.getElementById('paymentSection');
+      paymentSection.innerHTML = `
+        <h3>Payment Required</h3>
+        <p>Service Amount: ₹500</p>
+        <button class="btn btn-success" onclick="initiatePayment('${requestId}', 500)">Pay Now</button>
+      `;
+    }
+
+    async function initiatePayment(requestId, amount) {
+      try {
+        const result = await apiCall('/module4/create-order', 'POST', { serviceRequestId: requestId, amount });
+        
+        const options = {
+     key: 'rzp_test_S80X6FmLfgP6Lk',
+          amount: result.order.amount,
+          currency: 'INR',
+          name: 'RoadRescue',
+          description: 'Service Payment',
+          order_id: result.order.id,
+          handler: async function(response) {
+            await verifyPayment(result.paymentId, response);
+          }
+        };
+        
+        const rzp = new Razorpay(options);
+        rzp.open();
+      } catch (error) {
+        showAlert(error.message, 'error');
+      }
+    }
+
+    async function verifyPayment(paymentId, response) {
+      try {
+        await apiCall('/module4/verify-payment', 'POST', {
+          paymentId,
+          razorpayPaymentId: response.razorpay_payment_id,
+          razorpayOrderId: response.razorpay_order_id,
+          razorpaySignature: response.razorpay_signature
+        });
+        
+        showAlert('Payment successful!', 'success');
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } catch (error) {
+        showAlert(error.message, 'error');
+      }
+    }
+
+    loadRequestDetails();
+  </script>
+</body>
+</html>
